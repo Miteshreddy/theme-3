@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { NOTES, PALETTE, REGISTRY } from '../data.js'
 import { Sprig } from '../Drawings.jsx'
 import { useRevealAll } from '../lib.js'
+import { sound } from '../sound.js'
 
 export function FieldNotes() {
   const root = useRevealAll()
@@ -29,7 +30,10 @@ export function FieldNotes() {
             aria-selected={active === n.id}
             aria-controls="note-panel"
             className={`chip ${active === n.id ? 'is-on' : ''}`}
-            onClick={() => setActive(n.id)}
+            onClick={() => {
+              sound.tick()
+              setActive(n.id)
+            }}
           >
             {n.label}
           </button>
@@ -117,7 +121,10 @@ export function DressCode() {
             aria-label={p.name}
             className={`swatch ${sw === i ? 'is-on' : ''}`}
             style={{ '--c': p.hex }}
-            onClick={() => setSw(i)}
+            onClick={() => {
+              sound.pluck(i)
+              setSw(i)
+            }}
           />
         ))}
       </div>
@@ -159,7 +166,10 @@ export function DressCode() {
 export function Registry() {
   const root = useRevealAll()
   const [flipped, setFlipped] = useState({})
-  const toggle = (id) => setFlipped((f) => ({ ...f, [id]: !f[id] }))
+  const toggle = (id) => {
+    sound.flip()
+    setFlipped((f) => ({ ...f, [id]: !f[id] }))
+  }
 
   return (
     <section className="registry section" id="registry" ref={root} aria-labelledby="registry-title">
@@ -169,10 +179,16 @@ export function Registry() {
           Seeds <em>for later</em>
         </h2>
         <p className="lede">
-          Your company is truly the gift. If you would like to give something more, we have planted a few ideas. Tap a packet to
-          turn it over.
+          Your company is truly the gift. If you would like to give something more, we have planted a few ideas.
         </p>
       </header>
+
+      <p className="packets__hint" data-reveal>
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M16 22 V 8 a 3 3 0 0 1 6 0 v 10 l 7 2 a 4 4 0 0 1 3 5 l -2 9 H 18 l -7 -9 a 3 3 0 0 1 5 -4 z" />
+        </svg>
+        Tap a packet to flip it over ↻
+      </p>
 
       <div className="packets" data-reveal>
         {REGISTRY.map((r, i) => (
@@ -186,6 +202,9 @@ export function Registry() {
                 <span className="packet__seed">{r.seed}</span>
                 <span className="packet__meta">
                   Lot No. 0{i + 1} · Sow summer 2027
+                </span>
+                <span className="packet__flip" aria-hidden="true">
+                  tap to flip ↻
                 </span>
               </button>
               <div className="packet__face packet__back" aria-hidden={!flipped[r.id]}>

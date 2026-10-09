@@ -3,6 +3,7 @@ import { COUPLE, VENUE } from '../data.js'
 import { FarmScene, Grass, Sprig } from '../Drawings.jsx'
 import { clamp, prefersReducedMotion, useCountdown, useReveal, useScrollFrame } from '../lib.js'
 import { WEDDING_DATE } from '../data.js'
+import { sound } from '../sound.js'
 
 /** Ink drawing of the farm sketches itself, then the paper lifts away like a turned page. */
 export function Intro({ onDone }) {
@@ -20,7 +21,7 @@ export function Intro({ onDone }) {
   useEffect(() => {
     const html = document.documentElement
     html.classList.add('is-locked')
-    const t = setTimeout(finish, prefersReducedMotion() ? 300 : 3000)
+    const t = setTimeout(finish, prefersReducedMotion() ? 300 : 4200)
     return () => {
       clearTimeout(t)
       html.classList.remove('is-locked')
@@ -41,9 +42,22 @@ export function Intro({ onDone }) {
         </p>
         <p className="intro__sub">are getting married in the country</p>
       </div>
-      <button type="button" className="intro__skip" onClick={finish}>
-        Open the invitation
-      </button>
+      <div className="intro__actions">
+        <button
+          type="button"
+          className="intro__skip"
+          onClick={(e) => {
+            e.stopPropagation()
+            sound.enable()
+            finish()
+          }}
+        >
+          ♪ Open with sound
+        </button>
+        <button type="button" className="intro__quiet" onClick={finish}>
+          or open quietly
+        </button>
+      </div>
     </div>
   )
 }
@@ -86,13 +100,16 @@ export function Hero({ ready }) {
 
       <p className="hero__line">request the pleasure of your company as they marry</p>
 
-      <figure className="hero__arch">
-        <div className="hero__arch-clip">
+      <figure className="hero__barn">
+        <div className="hero__barn-clip">
           <img ref={photo} src="./photos/hero.jpg" alt={`${COUPLE.a} and ${COUPLE.b}, laughing together`} fetchpriority="high" />
+          <span className="hero__barn-sun" aria-hidden="true" />
         </div>
-        <svg className="hero__arch-rule" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M2 138 V 50 A 48 48 0 0 1 98 50 V 138 Z" pathLength="1" vectorEffect="non-scaling-stroke" />
+        <svg className="hero__barn-rule" viewBox="0 0 100 130" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M2 128 V 34 L 50 2 L 98 34 V 128 Z" pathLength="1" vectorEffect="non-scaling-stroke" />
+          <path d="M-4 37 L 50 -2 L 104 37" pathLength="1" vectorEffect="non-scaling-stroke" className="eave" />
         </svg>
+        <span className="hero__barn-sign" aria-hidden="true">est. 2010 · Hollow Oak</span>
         <Sprig className="hero__sprig" />
       </figure>
 
@@ -196,6 +213,7 @@ function Dandelion() {
     setSeeds(list)
     setBlown(true)
     setWished(true)
+    sound.whoosh()
     if (navigator.vibrate) navigator.vibrate(12)
     setTimeout(() => setSeeds([]), 8000)
     setTimeout(() => setBlown(false), 6500)

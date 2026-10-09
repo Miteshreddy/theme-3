@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { STORY } from '../data.js'
 import { Sprig } from '../Drawings.jsx'
 import { useRevealAll } from '../lib.js'
+import { sound } from '../sound.js'
 
 /*
  * A ring-bound field journal. Each leaf flips up over the binding like a
@@ -15,8 +16,14 @@ export default function Story() {
   const start = useRef(null)
   const N = STORY.length
 
-  const next = () => setTurned((t) => Math.min(N, t + 1))
-  const prev = () => setTurned((t) => Math.max(0, t - 1))
+  const next = () => {
+    sound.flip()
+    setTurned((t) => Math.min(N, t + 1))
+  }
+  const prev = () => {
+    sound.flip()
+    setTurned((t) => Math.max(0, t - 1))
+  }
 
   const onDown = (e) => {
     start.current = { x: e.clientX, y: e.clientY, id: e.pointerId }

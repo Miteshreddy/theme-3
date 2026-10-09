@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { STOPS, WEEKEND } from '../data.js'
 import { StopIcon } from '../Drawings.jsx'
 import { clamp, useRevealAll, useScrollFrame } from '../lib.js'
+import { sound } from '../sound.js'
 
 /*
  * "The day, hour by hour" — a pinned landscape. Scrolling moves the sun across
@@ -9,13 +10,14 @@ import { clamp, useRevealAll, useScrollFrame } from '../lib.js'
  * string lights glow over the long table, stars come out, sparklers end it.
  */
 
+// [progress, zenith, mid-sky, horizon] — three stops so the sky is one continuous wash
 const SKY = [
-  [0.0, '#a8c6d6', '#f3e9d2'],
-  [0.28, '#d9b98f', '#f7dba6'],
-  [0.48, '#bd7b8c', '#f2a571'],
-  [0.64, '#46507a', '#b9758a'],
-  [0.8, '#1d2544', '#3e4269'],
-  [1.0, '#0d1226', '#222949'],
+  [0.0, '#8fb4cc', '#bcd3dc', '#f3ead6'],
+  [0.28, '#9fb3c4', '#e2c49c', '#f9dca8'],
+  [0.48, '#7d6f95', '#d48d86', '#f6b071'],
+  [0.64, '#343f69', '#7a6688', '#c98576'],
+  [0.8, '#151c3a', '#2a3158', '#4a4569'],
+  [1.0, '#0a0f22', '#151b38', '#262c4c'],
 ]
 
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
@@ -27,13 +29,13 @@ const mix = (a, b, t) => {
 const skyAt = (p) => {
   for (let i = 1; i < SKY.length; i++) {
     if (p <= SKY[i][0]) {
-      const [p0, t0, b0] = SKY[i - 1]
-      const [p1, t1, b1] = SKY[i]
+      const [p0, ...a] = SKY[i - 1]
+      const [p1, ...b] = SKY[i]
       const t = (p - p0) / (p1 - p0)
-      return [mix(t0, t1, t), mix(b0, b1, t)]
+      return a.map((c, k) => mix(c, b[k], t))
     }
   }
-  return [SKY[SKY.length - 1][1], SKY[SKY.length - 1][2]]
+  return SKY[SKY.length - 1].slice(1).map((c) => mix(c, c, 0))
 }
 const ramp = (p, a, b) => clamp((p - a) / (b - a))
 
@@ -67,9 +69,14 @@ export default function DayScene() {
     const vh = window.innerHeight
     const p = clamp(-rect.top / Math.max(1, rect.height - vh))
     const R = refs.current
-    const [top, bottom] = skyAt(p)
+    const [top, mid, bottom] = skyAt(p)
     R.skyTop?.setAttribute('stop-color', top)
+    R.skyMid?.setAttribute('stop-color', mid)
     R.skyBot?.setAttribute('stop-color', bottom)
+    // the frame behind the svg carries the same sky, so wide screens never show a seam
+    if (R.frame) R.frame.style.setProperty('--sky', `linear-gradient(${top}, ${mid} 45%, ${bottom})`)
+    if (R.clouds) R.clouds.style.opacity = String(0.9 - ramp(p, 0.55, 0.85) * 0.75)
+    if (R.flies) R.flies.style.opacity = String(ramp(p, 0.62, 0.8))
 
     // sun: arcs down and sets behind the hills around p ≈ 0.56
     const t = clamp(p / 0.58)
@@ -95,6 +102,7 @@ export default function DayScene() {
       R.frame.style.setProperty('--lit', lamps.toFixed(3))
     }
     R.frame?.classList.toggle('is-night', p > 0.62)
+    if (rect.top < vh && rect.bottom > 0) sound.setNight(p > 0.62)
 
     const i = Math.min(STOPS.length - 1, Math.floor(p * STOPS.length * 0.999))
     setIdx((prev) => (prev === i ? prev : i))
@@ -111,8 +119,9 @@ export default function DayScene() {
           <svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
             <defs>
               <linearGradient id="daySky" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" ref={r('skyTop')} stopColor="#a8c6d6" />
-                <stop offset="0.75" ref={r('skyBot')} stopColor="#f3e9d2" />
+                <stop offset="0" ref={r('skyTop')} stopColor="#8fb4cc" />
+                <stop offset="0.42" ref={r('skyMid')} stopColor="#bcd3dc" />
+                <stop offset="0.74" ref={r('skyBot')} stopColor="#f3ead6" />
               </linearGradient>
               <radialGradient id="sunGlow">
                 <stop offset="0" stopColor="#fff3cf" stopOpacity="0.95" />
@@ -121,8 +130,30 @@ export default function DayScene() {
               </radialGradient>
               <linearGradient id="nightFade" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0" stopColor="#0d1430" stopOpacity="0" />
-                <stop offset="0.25" stopColor="#0d1430" stopOpacity="1" />
+                <stop offset="0.6" stopColor="#0d1430" stopOpacity="0.55" />
+                <stop offset="1" stopColor="#0d1430" stopOpacity="1" />
               </linearGradient>
+              <linearGradient id="hazeFade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#f4b46c" stopOpacity="0" />
+                <stop offset="0.55" stopColor="#f4b46c" stopOpacity="1" />
+                <stop offset="1" stopColor="#f4b46c" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="hillFar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#b8c0a2" />
+                <stop offset="0.3" stopColor="#a3ad8c" />
+              </linearGradient>
+              <linearGradient id="hillMid" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#97a47f" />
+                <stop offset="0.3" stopColor="#84926c" />
+              </linearGradient>
+              <linearGradient id="meadow" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#869569" />
+                <stop offset="0.5" stopColor="#6f7e55" />
+                <stop offset="1" stopColor="#56643f" />
+              </linearGradient>
+              <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" />
+              </filter>
               <radialGradient id="lampGlow">
                 <stop offset="0" stopColor="#ffe3a3" stopOpacity="1" />
                 <stop offset="1" stopColor="#ffb85c" stopOpacity="0" />
@@ -144,7 +175,22 @@ export default function DayScene() {
               <circle r="20" fill="#fff4d6" />
             </g>
             {/* golden haze */}
-            <rect ref={r('glow')} y="380" width="400" height="260" fill="#f4b46c" opacity="0" style={{ mixBlendMode: 'soft-light' }} />
+            <rect ref={r('glow')} y="220" width="400" height="480" fill="url(#hazeFade)" opacity="0" style={{ mixBlendMode: 'soft-light' }} />
+
+            {/* drifting clouds */}
+            <g ref={r('clouds')} className="day__clouds" filter="url(#soft)" fill="#fffaf0">
+              <g className="cloud cloud--a">
+                <ellipse cx="60" cy="260" rx="58" ry="12" />
+                <ellipse cx="86" cy="252" rx="30" ry="12" />
+              </g>
+              <g className="cloud cloud--b">
+                <ellipse cx="300" cy="330" rx="70" ry="10" />
+                <ellipse cx="276" cy="322" rx="28" ry="10" />
+              </g>
+              <g className="cloud cloud--c">
+                <ellipse cx="190" cy="420" rx="90" ry="8" opacity=".7" />
+              </g>
+            </g>
 
             {/* birds */}
             <g className="day__birds" fill="none" stroke="#2f2a22" strokeWidth="1.2" strokeLinecap="round">
@@ -154,8 +200,22 @@ export default function DayScene() {
             </g>
 
             {/* far hills */}
-            <path d="M0 560 C 60 520, 120 515, 190 540 S 320 505, 400 530 V 800 H 0 Z" fill="#a9b393" />
-            <path d="M0 585 C 80 560, 150 575, 230 565 S 350 560, 400 575 V 800 H 0 Z" fill="#8e9c78" />
+            <path d="M0 545 C 50 528, 110 520, 170 534 S 300 512, 400 524 V 800 H 0 Z" fill="#c3c8ad" opacity=".7" />
+            <path d="M0 560 C 60 520, 120 515, 190 540 S 320 505, 400 530 V 800 H 0 Z" fill="url(#hillFar)" />
+            {/* tree line on the ridge */}
+            <g fill="#7f8d68" opacity=".8">
+              {[12, 24, 140, 152, 162, 250, 262, 380, 392].map((x, i) => (
+                <ellipse key={x} cx={x} cy={538 - (i % 3) * 4 - (x > 200 && x < 300 ? 14 : 0)} rx="7" ry="10" />
+              ))}
+            </g>
+            <ellipse cx="200" cy="572" rx="260" ry="12" fill="#f4ecdc" opacity=".35" filter="url(#soft)" />
+            <path d="M0 585 C 80 560, 150 575, 230 565 S 350 560, 400 575 V 800 H 0 Z" fill="url(#hillMid)" />
+            {/* ploughed field rows */}
+            <g stroke="#7a8862" strokeWidth="1" opacity=".55" fill="none">
+              <path d="M236 574 C 280 570, 340 568, 400 580" />
+              <path d="M236 582 C 280 578, 340 577, 400 588" />
+              <path d="M236 590 C 280 587, 340 586, 400 596" />
+            </g>
 
             {/* farmhouse */}
             <g transform="translate(170 506)">
@@ -193,7 +253,22 @@ export default function DayScene() {
             </g>
 
             {/* meadow */}
-            <path d="M0 620 C 90 600, 200 625, 400 605 V 800 H 0 Z" fill="#7d8b63" />
+            <path d="M0 620 C 90 600, 200 625, 400 605 V 800 H 0 Z" fill="url(#meadow)" />
+            {/* split-rail fence along the meadow */}
+            <g stroke="#6b5440" strokeWidth="1.4" strokeLinecap="round" fill="none">
+              {[230, 248, 266, 284].map((x) => (
+                <path key={x} d={`M${x} 616 V 600`} />
+              ))}
+              <path d="M226 604 L 288 601 M226 611 L 288 608" />
+            </g>
+            {/* hay bales */}
+            {[[60, 672, 11], [84, 676, 9], [356, 712, 12]].map(([x, y, rr]) => (
+              <g key={x} transform={`translate(${x} ${y})`}>
+                <ellipse cx="2" cy={rr - 1} rx={rr + 2} ry="2.5" fill="#3f4a2e" opacity=".35" />
+                <circle r={rr} fill="#d8b26a" />
+                <path d={`M0 0 m -${rr * 0.6} 0 a ${rr * 0.6} ${rr * 0.6} 0 1 1 ${rr * 0.6} ${rr * 0.6} M0 0 m -${rr * 0.3} 0 a ${rr * 0.3} ${rr * 0.3} 0 1 1 ${rr * 0.3} ${rr * 0.3}`} fill="none" stroke="#a9853f" strokeWidth=".9" />
+              </g>
+            ))}
 
             {/* orchard */}
             {[[296, 628], [326, 620], [356, 632], [312, 650], [344, 654]].map(([x, y], i) => (
@@ -233,7 +308,14 @@ export default function DayScene() {
             <path d="M0 800 V 770 q 6 -24 10 0 q 4 -30 9 0 q 5 -20 9 0 q 6 -34 10 0 q 4 -22 8 0 V 800 Z M340 800 V 772 q 6 -28 10 0 q 4 -20 9 0 q 5 -34 10 0 q 5 -22 9 0 q 6 -26 12 0 V 800 Z" fill="#4f5b3b" />
 
             {/* night tint over the land */}
-             <rect ref={r('night')} y="440" width="400" height="360" fill="url(#nightFade)" style={{ opacity: 0, mixBlendMode: 'multiply' }} />
+            <rect ref={r('night')} y="0" width="400" height="800" fill="url(#nightFade)" style={{ opacity: 0, mixBlendMode: 'multiply' }} />
+
+            {/* fireflies over the meadow after dark */}
+            <g ref={r('flies')} className="day__flies" style={{ opacity: 0 }}>
+              {Array.from({ length: 18 }, (_, i) => (
+                <circle key={i} cx={(i * 53) % 400} cy={640 + ((i * 37) % 140)} r="1.6" style={{ animationDelay: `${-(i * 0.7)}s`, animationDuration: `${3 + (i % 4)}s` }} />
+              ))}
+            </g>
 
             {/* lights that must glow above the night tint */}
             <g className="day__lit" style={{ opacity: 'var(--lit, 0)' }}>

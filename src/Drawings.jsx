@@ -200,3 +200,158 @@ export function EstateMap() {
     </svg>
   )
 }
+
+/* ---------------------------------------------------------------------------
+ * Hedgerows — painted strips of countryside that stitch the sections together,
+ * so the farm never leaves the page. Each variant is a different field edge.
+ * ------------------------------------------------------------------------- */
+
+const tuft = (x, h, lean = 0) => `M${x} 60 q ${lean * 0.4} ${-h * 0.6} ${lean} ${-h}`
+
+function Flowers({ xs, colors }) {
+  return xs.map((x, i) => {
+    const h = 14 + ((x * 7) % 12)
+    const c = colors[i % colors.length]
+    return (
+      <g key={x} className="hedge__flower" style={{ animationDelay: `${-(i % 5) * 0.7}s`, transformOrigin: `${x}px 60px` }}>
+        <path d={`M${x} 60 V ${60 - h}`} stroke="#6f7e55" strokeWidth="1.1" />
+        {[0, 72, 144, 216, 288].map((a) => (
+          <ellipse key={a} cx={x} cy={60 - h - 3} rx="1.6" ry="3" fill={c} transform={`rotate(${a} ${x} ${60 - h})`} />
+        ))}
+        <circle cx={x} cy={60 - h} r="1.5" fill="#e8b84a" />
+      </g>
+    )
+  })
+}
+
+function Sheep({ x, flip = false }) {
+  return (
+    <g className="hedge__sheep" transform={`translate(${x} 38) scale(${flip ? -1 : 1} 1)`}>
+      <ellipse cx="0" cy="20" rx="13" ry="2" fill="#4f5b3b" opacity=".25" />
+      <path d="M-7 12 v 7 M-3 12 v 7 M4 12 v 7 M8 12 v 7" stroke="#2f2a22" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M-11 6 c -3 -6 3 -11 7 -8 c 2 -4 9 -4 11 0 c 5 -1 8 5 4 9 c 1 5 -5 8 -9 6 c -3 3 -10 2 -11 -2 c -4 0 -5 -4 -2 -5 z" fill="#f7f1e3" stroke="#2f2a22" strokeWidth="1" />
+      <g className="hedge__sheep-head">
+        <ellipse cx="13" cy="4" rx="4" ry="5" fill="#3a332a" />
+        <path d="M10 1 l -3 -2" stroke="#3a332a" strokeWidth="2" strokeLinecap="round" />
+      </g>
+    </g>
+  )
+}
+
+function Hen({ x }) {
+  return (
+    <g className="hedge__hen" transform={`translate(${x} 44)`}>
+      <path d="M-8 4 c 0 -8 10 -10 14 -4 l 4 -6 c 3 0 4 3 2 5 l -2 5 c 0 6 -8 9 -14 6 c -3 -1 -5 -3 -4 -6 z" fill="#b0714f" stroke="#2f2a22" strokeWidth=".9" />
+      <path d="M11 -7 l 2 -2 l 1 2 M14 -5 l 3 1 l -3 1" fill="#c25b44" stroke="#c25b44" strokeWidth="1" />
+      <circle cx="11" cy="-4" r=".8" fill="#2f2a22" />
+      <path d="M-2 10 v 6 M2 10 v 6" stroke="#c99a3c" strokeWidth="1.2" />
+    </g>
+  )
+}
+
+function Sunflower({ x, h }) {
+  return (
+    <g className="hedge__flower" style={{ transformOrigin: `${x}px 60px` }}>
+      <path d={`M${x} 60 V ${60 - h} M${x} ${60 - h * 0.5} q 6 -2 8 -8 q -6 0 -8 8`} stroke="#5f6b4b" strokeWidth="1.4" fill="#6f7e55" />
+      {Array.from({ length: 12 }, (_, k) => (
+        <ellipse key={k} cx={x} cy={60 - h - 6} rx="1.8" ry="4.5" fill="#e8b84a" transform={`rotate(${k * 30} ${x} ${60 - h})`} />
+      ))}
+      <circle cx={x} cy={60 - h} r="3.6" fill="#6b4a2c" />
+    </g>
+  )
+}
+
+export function Hedgerow({ variant = 'fence', className = '' }) {
+  const grass = useMemo(() => {
+    const out = []
+    let s = variant.length * 13
+    const rnd = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
+    for (let i = 0; i < 110; i++) out.push(tuft((i / 110) * 400 + rnd() * 4, 6 + rnd() * 14, (rnd() - 0.5) * 10))
+    return out.join(' ')
+  }, [variant])
+
+  const art = (
+    <>
+        {variant === 'fence' && (
+          <g stroke="#7a5f45" strokeWidth="2" strokeLinecap="round" fill="none">
+            {[20, 70, 120, 170, 230, 280, 330, 380].map((x) => (
+              <path key={x} d={`M${x} 60 V 30`} />
+            ))}
+            <path d="M10 36 C 120 34, 260 38, 392 35 M10 46 C 120 44, 260 48, 392 45" strokeWidth="1.6" />
+          </g>
+        )}
+        {variant === 'wheat' &&
+          Array.from({ length: 46 }, (_, i) => {
+            const x = 4 + i * 8.6
+            const h = 26 + ((i * 11) % 14)
+            return (
+              <g key={i} className="hedge__flower" style={{ transformOrigin: `${x}px 60px`, animationDelay: `${-(i % 6) * 0.5}s` }}>
+                <path d={`M${x} 60 V ${60 - h}`} stroke="#c9a45c" strokeWidth="1" />
+                {[0, 1, 2, 3].map((k) => (
+                  <g key={k} fill="#d8b26a">
+                    <ellipse cx={x - 2} cy={60 - h + 3 + k * 4} rx="1.4" ry="2.6" transform={`rotate(-25 ${x - 2} ${60 - h + 3 + k * 4})`} />
+                    <ellipse cx={x + 2} cy={60 - h + 3 + k * 4} rx="1.4" ry="2.6" transform={`rotate(25 ${x + 2} ${60 - h + 3 + k * 4})`} />
+                  </g>
+                ))}
+              </g>
+            )
+          })}
+        {variant === 'sheep' && (
+          <>
+            <path d="M0 52 C 100 40, 300 44, 400 50 V 64 H 0 Z" fill="#9caa8b" opacity=".35" />
+            <Sheep x={110} />
+            <Sheep x={150} flip />
+            <Sheep x={300} />
+          </>
+        )}
+        {variant === 'hens' && (
+          <>
+            <path d="M330 60 V 34 L 346 24 L 362 34 V 60 Z" fill="#a8604a" stroke="#2f2a22" strokeWidth="1" />
+            <path d="M342 60 v -10 h 8 v 10" fill="#3a2a22" />
+            <Hen x={90} />
+            <Hen x={250} />
+          </>
+        )}
+        {variant === 'sunflowers' && [30, 64, 98, 300, 336, 372].map((x, i) => <Sunflower key={x} x={x} h={30 + (i % 3) * 7} />)}
+        <path d={grass} stroke="#7d8b63" strokeWidth="1" fill="none" strokeLinecap="round" />
+        <Flowers xs={[44, 150, 196, 262, 318, 360]} colors={['#d79a8a', '#f1e2c8', '#9db4c8', '#e8b84a']} />
+          </>
+  )
+
+  return (
+    <div className={`hedge hedge--${variant} ${className}`} aria-hidden="true">
+      <svg className="hedge__narrow" viewBox="0 0 400 64" preserveAspectRatio="xMidYMax slice">
+        {art}
+      </svg>
+      <svg className="hedge__wide" viewBox="0 0 1200 64" preserveAspectRatio="xMidYMax slice">
+        {[0, 400, 800].map((x) => (
+          <g key={x} transform={`translate(${x} 0)${x === 400 ? ' translate(400 0) scale(-1 1)' : ''}`}>
+            {art}
+          </g>
+        ))}
+      </svg>
+    </div>
+  )
+}
+
+/** Two cabbage-white butterflies that wander across the page now and then. */
+export function Butterflies() {
+  return (
+    <div className="butterflies" aria-hidden="true">
+      {[0, 1].map((i) => (
+        <span key={i} className={`bfly bfly--${i}`}>
+          <svg viewBox="0 0 24 20">
+            <g className="bfly__l">
+              <path d="M12 10 C 6 0, 0 2, 2 8 C 3 11, 8 11, 12 10 Z" />
+              <path d="M12 10 C 6 12, 3 18, 7 18 C 10 18, 11 14, 12 10 Z" />
+            </g>
+            <g className="bfly__r">
+              <path d="M12 10 C 18 0, 24 2, 22 8 C 21 11, 16 11, 12 10 Z" />
+              <path d="M12 10 C 18 12, 21 18, 17 18 C 14 18, 13 14, 12 10 Z" />
+            </g>
+          </svg>
+        </span>
+      ))}
+    </div>
+  )
+}

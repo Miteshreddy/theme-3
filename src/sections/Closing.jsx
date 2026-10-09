@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { COUPLE, VENUE } from '../data.js'
 import { downloadCalendar, prefersReducedMotion, storage, useRevealAll } from '../lib.js'
+import { sound } from '../sound.js'
 
 /*
  * Night falls at the end of the page. Fireflies drift over the meadow and
@@ -44,6 +45,7 @@ export default function Closing() {
     const y = e.clientY - r.top
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     const lan = { id, x, y, dur: prefersReducedMotion() ? 0.01 : 9 + Math.random() * 4, sway: 10 + Math.random() * 24, hue: Math.random() }
+    sound.chime()
     setLanterns((l) => [...l, lan].slice(-MAX_LIVE))
     setCount((n) => {
       storage.set(KEY, n + 1)
@@ -63,9 +65,21 @@ export default function Closing() {
         <div className="night__moon" aria-hidden="true" />
 
         <div className="night__content">
-          <figure className="closing__photo" data-reveal>
-            <img src="./photos/closing.jpg" alt={`${COUPLE.a} and ${COUPLE.b} arriving together`} loading="lazy" />
-          </figure>
+          <div className="closing__string" data-reveal>
+            <svg className="closing__twine" viewBox="0 0 400 70" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M-10 6 Q 200 70 410 6" />
+            </svg>
+            <span className="closing__bulbs" aria-hidden="true">
+              {[6, 18, 30, 70, 82, 94].map((x, i) => (
+                <i key={x} style={{ left: `${x}%`, top: `${(6 + 64 * 4 * (x / 100) * (1 - x / 100)) * 0.9}px`, animationDelay: `${i * 0.4}s` }} />
+              ))}
+            </span>
+            <figure className="closing__photo">
+              <span className="peg" aria-hidden="true" />
+              <img src="./photos/closing.jpg" alt={`${COUPLE.a} and ${COUPLE.b} arriving together`} loading="lazy" />
+              <figcaption>see you at the farm ♡</figcaption>
+            </figure>
+          </div>
 
           <p className="kicker kicker--center" data-reveal>
             Save the date
