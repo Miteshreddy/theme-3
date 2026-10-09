@@ -47,13 +47,14 @@ export default function App() {
         <FieldNotes />
         <Hedgerow variant="sunflowers" />
         <DressCode />
-        <Hedgerow variant="fence" />
+        <Hedgerow variant="cows" />
         <Registry />
         <Hedgerow variant="wheat" />
         <Rsvp />
         <Closing />
       </main>
       <Butterflies />
+      <PetalTrail />
       <SoundToggle visible={ready} />
       <a href="#rsvp" className={`pill ${pill ? 'is-on' : ''}`} aria-hidden={!pill} tabIndex={pill ? 0 : -1}>
         <span className="pill__dot" />
@@ -83,4 +84,41 @@ function SoundToggle({ visible }) {
       <span className="sound__label">{on ? '♪ on' : '♪ sound'}</span>
     </button>
   )
+}
+
+/** Wherever a finger or cursor wanders, a few meadow petals drift down behind it. */
+function PetalTrail() {
+  const layer = useRef(null)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const colors = ['#f1e2c8', '#d79a8a', '#e8b84a', '#f7f1e3', '#9db4c8']
+    let last = 0
+    let lx = 0
+    let ly = 0
+    let live = 0
+    const drop = (x, y) => {
+      if (!layer.current || live > 28) return
+      const p = document.createElement('i')
+      const c = colors[Math.floor(Math.random() * colors.length)]
+      p.style.cssText = `left:${x}px;top:${y}px;background:${c};--dx:${(Math.random() - 0.5) * 60}px;--r:${Math.random() * 540 - 270}deg;animation-duration:${1.6 + Math.random()}s`
+      layer.current.appendChild(p)
+      live++
+      p.addEventListener('animationend', () => {
+        p.remove()
+        live--
+      })
+    }
+    const move = (e) => {
+      const now = performance.now()
+      if (now - last < 45) return
+      if (Math.hypot(e.clientX - lx, e.clientY - ly) < 18) return
+      last = now
+      lx = e.clientX
+      ly = e.clientY
+      drop(e.clientX, e.clientY)
+    }
+    window.addEventListener('pointermove', move, { passive: true })
+    return () => window.removeEventListener('pointermove', move)
+  }, [])
+  return <div className="petals" ref={layer} aria-hidden="true" />
 }

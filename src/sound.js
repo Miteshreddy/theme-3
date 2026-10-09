@@ -273,6 +273,55 @@ export const sound = {
     n.connect(hp).connect(g).connect(sfx)
     n.start(t)
   },
+  /** farm voices for the tappable animals */
+  animal(kind) {
+    if (!on) return
+    const t = ctx.currentTime
+    const voice = (f0, f1, dur, { type = 'sawtooth', vib = 0, form = 900, vol = 0.18 } = {}) => {
+      const o = ctx.createOscillator()
+      o.type = type
+      o.frequency.setValueAtTime(f0, t)
+      o.frequency.linearRampToValueAtTime(f1, t + dur)
+      if (vib) {
+        const l = ctx.createOscillator()
+        const lg = ctx.createGain()
+        l.frequency.value = vib
+        lg.gain.value = f0 * 0.06
+        l.connect(lg).connect(o.frequency)
+        l.start(t)
+        l.stop(t + dur)
+      }
+      const bp = ctx.createBiquadFilter()
+      bp.type = 'bandpass'
+      bp.frequency.value = form
+      bp.Q.value = 1.4
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0, t)
+      g.gain.linearRampToValueAtTime(vol, t + 0.05)
+      g.gain.setValueAtTime(vol, t + dur * 0.7)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+      o.connect(bp).connect(g).connect(sfx)
+      o.start(t)
+      o.stop(t + dur + 0.05)
+    }
+    if (kind === 'sheep') voice(330, 300, 0.7, { vib: 9, form: 1100 })
+    if (kind === 'cow') voice(140, 105, 1.3, { form: 520, vol: 0.28 })
+    if (kind === 'hen') {
+      for (let i = 0; i < 4; i++) {
+        const s = t + i * 0.11
+        const o = ctx.createOscillator()
+        const g = ctx.createGain()
+        o.type = 'square'
+        o.frequency.setValueAtTime(700 + (i === 3 ? 300 : 0), s)
+        o.frequency.exponentialRampToValueAtTime(420, s + 0.07)
+        g.gain.setValueAtTime(0.05, s)
+        g.gain.exponentialRampToValueAtTime(0.0001, s + 0.08)
+        o.connect(g).connect(sfx)
+        o.start(s)
+        o.stop(s + 0.09)
+      }
+    }
+  },
   /** dandelion seeds: a soft breath and a rising sparkle */
   whoosh() {
     if (!on) return

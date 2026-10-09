@@ -62,9 +62,25 @@ export function Intro({ onDone }) {
   )
 }
 
+// What the farm is doing right now, in the guest's own time zone
+const MOMENTS = [
+  [5, 'dawn', 'Good morning from the farm', 'the rooster beat you to it'],
+  [11, 'day', 'Good day from the farm', 'the sheep are out in the far field'],
+  [16, 'golden', 'Good afternoon from the farm', 'the light is turning golden over the orchard'],
+  [20, 'night', 'Good evening from the farm', 'the fireflies are out over the meadow'],
+]
+const momentNow = () => {
+  const h = new Date().getHours()
+  const m = [...MOMENTS].reverse().find(([from]) => h >= from) || MOMENTS[3]
+  return h < 5 ? MOMENTS[3] : m
+}
+
 export function Hero({ ready }) {
   const photo = useRef(null)
   const hero = useRef(null)
+  const vane = useRef(null)
+  const spin = useRef({ y: 0, a: 0, v: 0 })
+  const [, mood, hello, aside] = momentNow()
 
   useScrollFrame(() => {
     const el = hero.current
@@ -74,8 +90,30 @@ export function Hero({ ready }) {
     img.style.transform = `translate3d(0, ${(p * 14).toFixed(2)}%, 0) scale(${(1.08 - p * 0.04).toFixed(4)})`
   })
 
+  // the weather vane catches the "wind" of the scroll and settles slowly
+  useEffect(() => {
+    if (prefersReducedMotion()) return
+    let raf
+    const s = spin.current
+    s.y = window.scrollY
+    const loop = () => {
+      const dy = window.scrollY - s.y
+      s.y = window.scrollY
+      s.v = s.v * 0.94 + dy * 0.06
+      s.a += s.v * 0.6 + Math.sin(Date.now() / 1400) * 0.08
+      if (vane.current) vane.current.style.transform = `rotateY(${s.a.toFixed(1)}deg)`
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   return (
-    <header className={`hero ${ready ? 'is-ready' : ''}`} ref={hero} id="top">
+    <header className={`hero hero--${mood} ${ready ? 'is-ready' : ''}`} ref={hero} id="top">
+      <p className="hero__hello">
+        <span className="hero__hello-dot" aria-hidden="true" />
+        {hello} <em>— {aside}</em>
+      </p>
       <p className="hero__eyebrow">
         <span>Together with their families</span>
       </p>
@@ -109,6 +147,19 @@ export function Hero({ ready }) {
           <path d="M2 128 V 34 L 50 2 L 98 34 V 128 Z" pathLength="1" vectorEffect="non-scaling-stroke" />
           <path d="M-4 37 L 50 -2 L 104 37" pathLength="1" vectorEffect="non-scaling-stroke" className="eave" />
         </svg>
+        <span className="hero__vane" aria-hidden="true">
+          <span className="hero__vane-post" />
+          <svg ref={vane} viewBox="0 0 60 44">
+            <path d="M2 38 H 58 M52 34 l 6 4 l -6 4 M2 34 l 4 4 l -4 4" />
+            {/* rooster: tail fan, body, neck, comb, beak, legs */}
+            <path
+              className="rooster"
+              d="M12 20 c -6 -4 -6 -14 0 -16 c 0 6 2 8 4 9 c -2 -5 0 -10 4 -11 c -1 6 1 9 4 11 c 1 -4 4 -6 7 -5 c -2 3 -2 6 0 8 l 4 -6 c 0 -4 3 -6 6 -5 l 2 -3 l 1 3 l 2 -1 l -1 3 c 2 1 2 3 1 4 l 4 1 l -4 2 c 0 3 -2 5 -4 6 c 0 6 -4 10 -12 10 h -4 c -8 0 -12 -4 -14 -10 z"
+            />
+            <path d="M28 30 v 8 M34 30 v 8" />
+          </svg>
+          <span className="hero__vane-ns">N · S</span>
+        </span>
         <span className="hero__barn-sign" aria-hidden="true">est. 2010 · Hollow Oak</span>
         <Sprig className="hero__sprig" />
       </figure>

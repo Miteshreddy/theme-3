@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { downloadCalendar, storage, useRevealAll } from '../lib.js'
+import { sound } from '../sound.js'
 
 const KEY = 'hollow-oak-rsvp'
 const EMPTY = { name: '', email: '', attending: '', guests: 1, friday: false, sunday: false, dietary: '', song: '', message: '' }
@@ -65,6 +66,7 @@ export default function Rsvp() {
       storage.set(KEY, { form, at: Date.now() })
       setSending(false)
       setStep('done')
+      sound.chime()
     }, 900)
   }
 
@@ -121,6 +123,30 @@ export default function Rsvp() {
             ) : (
               <>
                 <h3 className="rsvp__done-title">See you on the lane, {firstName}!</h3>
+                <div className="planted" aria-label={`A sunflower planted for ${firstName} in our garden`}>
+                  <svg viewBox="0 0 160 150" aria-hidden="true">
+                    <path className="planted__soil" d="M10 140 C 50 128, 110 128, 150 140 V 150 H 10 Z" />
+                    <path className="planted__stem" pathLength="1" d="M80 140 C 78 110, 84 80, 80 46" />
+                    <path className="planted__leaf" d="M80 108 c -16 -2 -24 -12 -24 -20 c 12 0 22 8 24 20 z" />
+                    <path className="planted__leaf planted__leaf--r" d="M81 92 c 14 -4 22 -14 20 -22 c -12 2 -20 10 -20 22 z" />
+                    <g transform="translate(80 40)">
+                    <g className="planted__head">
+                      {Array.from({ length: 16 }, (_, k) => (
+                        <ellipse key={k} cx="0" cy="-17" rx="4" ry="10" transform={`rotate(${k * 22.5})`} />
+                      ))}
+                      <circle r="10" className="planted__seed" />
+                    </g>
+                    </g>
+                    <g className="planted__stake" transform="translate(112 112)">
+                      <path d="M6 28 V 10" />
+                      <rect x="-14" y="-3" width="42" height="15" rx="2" />
+                      <text x="7" y="8" textAnchor="middle" className="planted__name">
+                        {firstName.length > 9 ? firstName.slice(0, 8) + '…' : firstName}
+                      </text>
+                    </g>
+                  </svg>
+                  <p className="planted__note">We planted a sunflower for you. By June 5 it'll be taller than the fence.</p>
+                </div>
                 <p>
                   Your reply for {form.guests} {Number(form.guests) === 1 ? 'guest' : 'guests'} is pressed &amp; posted. A confirmation is on its way to{' '}
                   <span className="nowrap">{form.email}</span>.

@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
+import { sound } from './sound.js'
 
 /* Every drawing is a single-weight ink line in currentColor, so it can be tinted from CSS. */
 
@@ -224,6 +225,51 @@ function Flowers({ xs, colors }) {
   })
 }
 
+const SAYS = { sheep: ['baa!', 'baaa~', 'hello!'], hen: ['cluck!', 'bok bok', 'cheep?'], cow: ['moo.', 'mooo~', 'hi there'] }
+
+/** Wraps an animal so a tap makes it hop and speak (with a farm voice when sound is on). */
+function Critter({ kind, x, y, children }) {
+  const [say, setSay] = useState(null)
+  const timer = useRef(0)
+  const tap = () => {
+    const lines = SAYS[kind]
+    setSay(lines[Math.floor(Math.random() * lines.length)])
+    sound.animal(kind)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setSay(null), 1600)
+  }
+  return (
+    <g className={`critter ${say ? 'is-talking' : ''}`} onClick={tap}>
+      <g className="critter__body">{children}</g>
+      {say && (
+        <g className="critter__bubble" transform={`translate(${x} ${y})`}>
+          <rect x={-say.length * 3 - 6} y="-14" width={say.length * 6 + 12} height="16" rx="8" />
+          <path d="M-3 2 L 0 7 L 4 2" />
+          <text y="-3" textAnchor="middle">{say}</text>
+        </g>
+      )}
+    </g>
+  )
+}
+
+function Cow({ x }) {
+  return (
+    <g transform={`translate(${x} 30)`}>
+      <ellipse cx="2" cy="30" rx="22" ry="2.5" fill="#4f5b3b" opacity=".25" />
+      <path d="M-14 16 v 13 M-8 18 v 11 M8 18 v 11 M14 16 v 13" stroke="#2f2a22" strokeWidth="2" strokeLinecap="round" />
+      <path d="M-18 6 c 0 -6 4 -8 10 -8 h 22 c 6 0 8 4 8 10 v 8 c 0 4 -3 5 -8 5 h -24 c -6 0 -8 -3 -8 -8 z" fill="#f7f1e3" stroke="#2f2a22" strokeWidth="1" />
+      <path d="M-8 -2 c 4 4 2 10 -4 10 c -4 -2 -2 -8 4 -10 z M8 4 c 6 -2 10 2 8 6 c -4 2 -9 0 -8 -6 z" fill="#3a332a" />
+      <path d="M-20 4 q -3 8 -2 14" stroke="#2f2a22" strokeWidth="1" fill="none" className="cow__tail" />
+      <g className="cow__head">
+        <path d="M22 0 c 6 -4 14 -2 14 6 v 8 c 0 4 -4 5 -8 5 c -5 0 -7 -3 -7 -7 z" fill="#f7f1e3" stroke="#2f2a22" strokeWidth="1" />
+        <ellipse cx="31" cy="15" rx="6" ry="4" fill="#e7b9a8" stroke="#2f2a22" strokeWidth=".8" />
+        <circle cx="30" cy="5" r="1" fill="#2f2a22" />
+        <path d="M24 -2 l -3 -4 M34 -2 l 3 -4" stroke="#8a8070" strokeWidth="1.6" strokeLinecap="round" />
+      </g>
+    </g>
+  )
+}
+
 function Sheep({ x, flip = false }) {
   return (
     <g className="hedge__sheep" transform={`translate(${x} 38) scale(${flip ? -1 : 1} 1)`}>
@@ -299,17 +345,27 @@ export function Hedgerow({ variant = 'fence', className = '' }) {
         {variant === 'sheep' && (
           <>
             <path d="M0 52 C 100 40, 300 44, 400 50 V 64 H 0 Z" fill="#9caa8b" opacity=".35" />
-            <Sheep x={110} />
-            <Sheep x={150} flip />
-            <Sheep x={300} />
+            <Critter kind="sheep" x={110} y={30}><Sheep x={110} /></Critter>
+            <Critter kind="sheep" x={150} y={30}><Sheep x={150} flip /></Critter>
+            <Critter kind="sheep" x={300} y={30}><Sheep x={300} /></Critter>
           </>
         )}
         {variant === 'hens' && (
           <>
             <path d="M330 60 V 34 L 346 24 L 362 34 V 60 Z" fill="#a8604a" stroke="#2f2a22" strokeWidth="1" />
             <path d="M342 60 v -10 h 8 v 10" fill="#3a2a22" />
-            <Hen x={90} />
-            <Hen x={250} />
+            <Critter kind="hen" x={95} y={32}><Hen x={90} /></Critter>
+            <Critter kind="hen" x={255} y={32}><Hen x={250} /></Critter>
+          </>
+        )}
+        {variant === 'cows' && (
+          <>
+            <path d="M0 54 C 120 44, 280 46, 400 52 V 64 H 0 Z" fill="#9caa8b" opacity=".35" />
+            <g stroke="#7a5f45" strokeWidth="1.6" strokeLinecap="round" fill="none">
+              {[20, 60, 340, 380].map((x) => <path key={x} d={`M${x} 60 V 36`} />)}
+              <path d="M14 42 H 66 M334 42 H 386" />
+            </g>
+            <Critter kind="cow" x={200} y={24}><Cow x={186} /></Critter>
           </>
         )}
         {variant === 'sunflowers' && [30, 64, 98, 300, 336, 372].map((x, i) => <Sunflower key={x} x={x} h={30 + (i % 3) * 7} />)}
@@ -325,7 +381,7 @@ export function Hedgerow({ variant = 'fence', className = '' }) {
       </svg>
       <svg className="hedge__wide" viewBox="0 0 1200 64" preserveAspectRatio="xMidYMax slice">
         {[0, 400, 800].map((x) => (
-          <g key={x} transform={`translate(${x} 0)${x === 400 ? ' translate(400 0) scale(-1 1)' : ''}`}>
+          <g key={x} transform={`translate(${x} 0)`}>
             {art}
           </g>
         ))}

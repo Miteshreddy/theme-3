@@ -3818,3 +3818,272 @@ main > header {
     display: none;
   }
 }
+
+/* tappable animals */
+.critter {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.critter.is-talking .critter__body {
+  animation: hop 0.5s var(--ease-out);
+}
+@keyframes hop {
+  30% { transform: translateY(-5px); }
+}
+.critter__bubble rect {
+  fill: #fbf8f1;
+  stroke: #2f2a22;
+  stroke-width: 0.8;
+}
+.critter__bubble path {
+  fill: #fbf8f1;
+  stroke: #2f2a22;
+  stroke-width: 0.8;
+}
+.critter__bubble text {
+  font-family: var(--hand);
+  font-size: 11px;
+  fill: #2f2a22;
+}
+.critter__bubble {
+  animation: bubbleIn 0.3s var(--ease-out);
+}
+@keyframes bubbleIn {
+  from { opacity: 0; }
+}
+.cow__head {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: cowNod 6s ease-in-out infinite;
+}
+@keyframes cowNod {
+  0%, 70%, 100% { transform: rotate(0); }
+  80% { transform: rotate(18deg); }
+}
+.cow__tail {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: sway 1.4s ease-in-out infinite alternate;
+}
+.hedge--sheep::after,
+.hedge--hens::after,
+.hedge--cows::after {
+  content: 'tap the animals';
+  position: absolute;
+  right: 12px;
+  top: 4px;
+  font-family: var(--hand);
+  font-size: 15px;
+  color: var(--ink-3);
+  opacity: 0.8;
+}
+
+/* "Good morning from the farm" — tuned to the guest's local clock */
+.hero__hello {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  max-width: 22rem;
+  margin: 0 auto 14px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(156, 170, 139, 0.18);
+  font-family: var(--hand);
+  font-size: 17px;
+  line-height: 1.2;
+  color: var(--moss);
+  opacity: 0;
+  transition: opacity 1s ease 0.3s;
+}
+.hero.is-ready .hero__hello {
+  opacity: 1;
+}
+.hero__hello em {
+  font-style: normal;
+  color: var(--ink-3);
+}
+.hero__hello-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e8b84a;
+  box-shadow: 0 0 0 4px rgba(232, 184, 74, 0.25);
+}
+.hero--night .hero__hello-dot {
+  background: #f6efd9;
+  box-shadow: 0 0 10px 3px rgba(255, 233, 160, 0.6);
+}
+.hero--dawn {
+  background-image: linear-gradient(rgba(244, 196, 170, 0.22), transparent 55%);
+}
+.hero--golden {
+  background-image: linear-gradient(rgba(244, 180, 108, 0.18), transparent 55%);
+}
+.hero--night {
+  background-image: linear-gradient(rgba(70, 80, 122, 0.14), transparent 55%);
+}
+
+/* rooster weather vane on the barn gable */
+.hero__vane {
+  position: absolute;
+  left: 50%;
+  top: -54px;
+  width: 64px;
+  margin-left: -32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  perspective: 200px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease 1.8s;
+}
+.hero.is-ready .hero__vane {
+  opacity: 1;
+}
+.hero__vane svg {
+  width: 58px;
+  height: 42px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  order: -1;
+}
+.hero__vane .rooster {
+  fill: var(--ink);
+}
+.hero__vane-post {
+  width: 1.5px;
+  height: 22px;
+  background: var(--ink);
+}
+.hero__vane-ns {
+  position: absolute;
+  top: 40px;
+  font-family: var(--sans);
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  color: var(--ink-3);
+}
+
+/* petal trail */
+.petals {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  overflow: hidden;
+}
+.petals i {
+  position: absolute;
+  width: 7px;
+  height: 10px;
+  margin: -5px 0 0 -3px;
+  border-radius: 60% 0 60% 0;
+  opacity: 0.9;
+  animation: petalFall 2s ease-in forwards;
+}
+@keyframes petalFall {
+  to {
+    transform: translate(var(--dx), 70px) rotate(var(--r));
+    opacity: 0;
+  }
+}
+
+/* the RSVP sunflower */
+.planted {
+  position: relative;
+  width: 200px;
+  margin: 6px auto 14px;
+  text-align: center;
+}
+.planted svg {
+  width: 100%;
+  overflow: visible;
+}
+.planted__soil {
+  fill: #8a6a4c;
+}
+.planted__stem {
+  fill: none;
+  stroke: #5f6b4b;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.4s var(--ease) 0.2s forwards;
+}
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+.planted__leaf {
+  fill: #7d8b63;
+  transform-box: fill-box;
+  transform-origin: 100% 100%;
+  transform: scale(0);
+  animation: grow 0.7s var(--ease-out) 1s forwards;
+}
+.planted__leaf--r {
+  transform-origin: 0% 100%;
+  animation-delay: 1.2s;
+}
+.planted__head ellipse {
+  fill: #e8b84a;
+}
+.planted__seed {
+  fill: #6b4a2c;
+}
+.planted__head {
+  transform-box: fill-box;
+  transform-origin: center;
+  scale: 0;
+  animation: bloom 1s var(--ease-out) 1.4s forwards, sway 4s ease-in-out 2.4s infinite alternate;
+}
+@keyframes bloom {
+  from { scale: 0; rotate: -90deg; }
+  to { scale: 1; rotate: 0deg; }
+}
+@keyframes grow {
+  to { transform: scale(1); }
+}
+.planted__stake path {
+  stroke: #8a5a3c;
+  stroke-width: 3;
+}
+.planted__stake rect {
+  fill: #c9a274;
+  stroke: #8a5a3c;
+}
+.planted__name {
+  font-family: var(--hand);
+  font-size: 10px;
+  fill: #3a2a22;
+}
+.planted__note {
+  margin: 4px 0 0;
+  font-family: var(--hand);
+  font-size: 18px;
+  color: var(--moss);
+}
+@media (prefers-reduced-motion: reduce) {
+  .planted__stem, .planted__leaf, .planted__head {
+    animation: none;
+    stroke-dashoffset: 0;
+    transform: none;
+    scale: 1;
+  }
+}
+.hero__barn {
+  margin-top: 56px;
+}
+
+@media (max-width: 520px) {
+  .hero__hello {
+    margin-top: 40px;
+    font-size: 16px;
+  }
+}
